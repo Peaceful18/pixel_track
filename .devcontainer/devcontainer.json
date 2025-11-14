@@ -1,0 +1,27 @@
+{
+    "name": "Pixel Track Dev",
+    "dockerComposeFile": [
+        "docker-compose.dev.yml"
+    ],
+    "service": "app",
+    "workspaceFolder": "/app",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    "forwardPorts": [
+        8000
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-azuretools.vscode-docker"
+            ]
+        }
+    },
+    "remoteEnv": {
+        "PYTHONPATH": "/app"
+    },
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    }
+}
