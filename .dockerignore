@@ -1,0 +1,17 @@
+# Локальне оточення
+venv/
+__pycache__/
+*.pyc
+
+# IDE / редактор
+.vscode/
+.devcontainer/
+.idea/
+
+# Git
+.git
+.gitignore
+
+# Технічні каталоги
+infra/
+*.log
