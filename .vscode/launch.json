@@ -7,7 +7,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "app.main:app",
+                "ingest_api.main:app",
                 "--reload"
             ],
             "console": "integratedTerminal",
@@ -25,7 +25,7 @@
             "program": "-m",
             "args": [
                 "uvicorn",
-                "app.main:app",
+                "ingest_api.main:app",
                 "--reload",
                 "--host",
                 "0.0.0.0",
