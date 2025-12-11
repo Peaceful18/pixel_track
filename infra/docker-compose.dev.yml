@@ -1,16 +1,7 @@
 version: "3.9"
 
 services:
-  app:
-    build:
-      context: ..
-      dockerfile: Dockerfile 
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-      - redis
-
+  # --- База даних ---
   db:
     image: postgres:18
     restart: always
@@ -18,7 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pixel_track
-      PGDATA: /var/lib/postgresql/data 
+      PGDATA: /var/lib/postgresql/data
       TZ: UTC
       PGTZ: UTC
     ports:
@@ -26,6 +17,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql
 
+  # --- Redis ---
   redis:
     image: redis:alpine
     ports:
@@ -34,6 +26,7 @@ services:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
 
+  # --- Інтерфейс для Redis ---
   redis-insight:
     image: redis/redisinsight:latest
     ports:
