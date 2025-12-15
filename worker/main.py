@@ -7,8 +7,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from database.database import SessionLocal
 from database.models import RawEvent
 
+from parsers import parse_log
+
 BATCH_SIZE = 100
 FLUSH_INTERVAL = 5
+KEY_RAW_LOG = "raw_log"
 
 
 def log_listener():
@@ -20,6 +23,13 @@ def log_listener():
             queue_name, payload_json = data
             try:
                 event_data = json.loads(payload_json)
+                event_type = event_data["type"]
+                payload = event_data.get("payload", {}) or {}
+                raw_message = payload.get(KEY_RAW_LOG)
+                if raw_message:
+                    parsed_info = parse_log(raw_message, event_type)
+                    if parsed_info:
+                        payload.update(parsed_info)
                 new_event = RawEvent(
                     raw_event_name=event_data["event"],
                     raw_event_type=event_data["type"],
