@@ -46,8 +46,3 @@ def parse_log(log_string: str, event_type: str) -> dict:
     return {}
 
 
-# def parse_sql_log(log_string: str) -> dict:
-#     match = re.match(SQL_PATTERN, log_string)
-#     if match:
-#         return match.groupdict()
-#     return {}

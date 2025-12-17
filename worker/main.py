@@ -1,13 +1,12 @@
 import json
 import time
 
+from parsers import parse_log
 from redis_client import brpop_event
 from sqlalchemy.exc import SQLAlchemyError
 
 from database.database import SessionLocal
 from database.models import RawEvent
-
-from parsers import parse_log
 
 BATCH_SIZE = 100
 FLUSH_INTERVAL = 5

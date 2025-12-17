@@ -36,7 +36,18 @@ services:
     depends_on:
       - redis
 
+  grafana:
+      image: grafana/grafana:latest
+      container_name: pixel_grafana
+      ports:
+        - "3000:3000"
+      environment:
+        - GF_SECURITY_ADMIN_PASSWORD=admin
+      depends_on:
+        - db
+
 volumes:
   pg_data:
   redis_data:
   redis_insight:
+  grafana_data:

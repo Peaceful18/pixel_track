@@ -1,16 +1,42 @@
-version: "3.9"
-
 services:
-  app:
+  # --- 1. API Service ---
+  api:
     build:
       context: ..
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
+    container_name: pixel_api
+    restart: always
     ports:
       - "8000:8000"
     depends_on:
       - db
       - redis
+    environment:
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ../:/app
 
+  worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: pixel_worker
+    restart: always
+    command: python worker/main.py 
+    depends_on:
+      - db
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ../:/app
+
+  # --- 3. Database ---
   db:
     image: postgres:18
     restart: always
@@ -26,14 +52,17 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql
 
+  # --- 4. Redis ---
   redis:
     image: redis:alpine
+    restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
 
+  # --- 5. Redis UI (Optional for Prod, but good for debug) ---
   redis-insight:
     image: redis/redisinsight:latest
     ports:
@@ -43,7 +72,22 @@ services:
     depends_on:
       - redis
 
+  # --- 6. Grafana (Visualization) ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pixel_grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - db
+    volumes:
+      - grafana_data:/var/lib/grafana
+
 volumes:
   pg_data:
   redis_data:
   redis_insight:
+  grafana_data:
