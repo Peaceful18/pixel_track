@@ -1,48 +1,41 @@
-import redis
+from redis import RedisError
+from redis import asyncio as aioredis
 
 from app_config.config import settings
 
-redis_client = redis.Redis(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    db=settings.REDIS_DB,
-    socket_timeout=5,
-    decode_responses=True,
-)
 
-
-def push_event(event_json: str) -> None:
+async def push_event(event_json: str, client: aioredis.Redis) -> None:
     """
     Проста операція O(1) для вставки в кінець списку (LPUSH/RPUSH).
     Використовуємо LPUSH (Left Push), тоді воркер робитиме RPOP.
     """
     try:
-        redis_client.lpush(settings.REDIS_QUEUE_KEY, event_json)
-    except redis.RedisError as e:
+        await client.lpush(settings.REDIS_QUEUE_KEY, event_json)
+    except RedisError as e:
         print(f"Redis error: {e}")
         raise e
 
 
-def push_event_batch(events_json: list[str]) -> None:
+async def push_event_batch(events_json: list[str], client: aioredis.Redis) -> None:
     """
     Використовує pipeline для масової вставки[cite: 501].
     Зменшує кількість RTT (Round Trip Time).
     """
     try:
-        pipe = redis_client.pipeline()
+        pipe = client.pipeline()
         for event in events_json:
             pipe.lpush(settings.REDIS_QUEUE_KEY, event)
-        pipe.execute()
-    except redis.RedisError as e:
+        await pipe.execute()
+    except RedisError as e:
         print(f"Redis error: {e}")
         raise e
 
 
-def check_health() -> bool:
+async def check_health(client: aioredis.Redis) -> bool:
     """
     Перевірка з'єднання [cite: 509]
     """
     try:
-        return redis_client.ping()
-    except redis.RedisError:
+        return await client.ping()
+    except RedisError:
         return False

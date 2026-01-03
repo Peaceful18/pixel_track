@@ -9,8 +9,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DB_HOST=db
       - REDIS_HOST=redis
@@ -26,8 +28,10 @@ services:
     restart: always
     command: python worker/main.py 
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - PYTHONPATH=/app
       - DB_HOST=db
@@ -51,6 +55,11 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # --- 4. Redis ---
   redis:
@@ -61,6 +70,11 @@ services:
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # --- 5. Redis UI (Optional for Prod, but good for debug) ---
   redis-insight:

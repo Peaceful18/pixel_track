@@ -1,33 +1,16 @@
-import redis
+from redis import RedisError
+from redis import asyncio as aioredis
 
 from app_config.config import settings
 
-redis_client = redis.Redis(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    db=settings.REDIS_DB,
-    socket_timeout=20,
-    decode_responses=True,
-)
 
-
-def brpop_event() -> str:
+async def brpop_event(client: aioredis.Redis) -> str:
     """
     Використовуємо BRPOP (Blocking Right Pop),
     тоді воркер робитиме LPOP.
     """
     try:
-        return redis_client.brpop(settings.REDIS_QUEUE_KEY, timeout=2)
-    except redis.RedisError as e:
+        return await client.brpop(settings.REDIS_QUEUE_KEY, timeout=2)
+    except RedisError as e:
         print(f"Redis error: {e}")
         return None
-
-
-def check_health() -> bool:
-    """
-    Перевірка з'єднання [cite: 509]
-    """
-    try:
-        return redis_client.ping()
-    except redis.RedisError:
-        return False

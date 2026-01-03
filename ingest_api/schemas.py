@@ -49,3 +49,8 @@ class TrackResponse(BaseModel):
     accepted: int
     failed: int
     errors: list[str] | None = None
+
+
+class HealthResponse(BaseModel):
+    status: str = "ok"
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
