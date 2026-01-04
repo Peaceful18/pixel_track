@@ -1,11 +1,13 @@
 import json
 
+import pytest
 from httpx import AsyncClient
 
 from app_config.config import settings
 from ingest_api.main import app
 
 
+@pytest.mark.asyncio
 async def test_track_endpoint_integration(client):
     """
     Інтеграційний тест: API -> Redis
