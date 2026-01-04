@@ -47,6 +47,7 @@ jobs:
 
       - name: Run Tests
         env:
+          PYTHONPATH: .
           DB_HOST: localhost
           REDIS_HOST: localhost
           REDIS_PORT: 6379
