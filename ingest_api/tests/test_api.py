@@ -1,14 +1,14 @@
 import json
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
 from app_config.config import settings
 from ingest_api.main import app
 
 
 @pytest.mark.asyncio
-async def test_track_endpoint_integration(redis_client):  # Назва фікстури!
+async def test_track_endpoint_integration(redis_client):
     test_event = {
         "event": "test_ci",
         "type": "custom",
@@ -19,8 +19,11 @@ async def test_track_endpoint_integration(redis_client):  # Назва фікс�
         "payload": {"key": "value"},
     }
 
-    # Використовуємо httpx для виклику FastAPI
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    # Створюємо транспорт для FastAPI
+    transport = ASGITransport(app=app)
+
+    # Передаємо transport замість app
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         response = await ac.post("/ingest/track", json=test_event)
 
     assert response.status_code == 202

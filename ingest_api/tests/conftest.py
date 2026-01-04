@@ -29,4 +29,4 @@ async def redis_client():
 
     # Очищуємо базу після тесту, щоб наступні тести були в "чистому" середовищі
     await redis.flushdb()
-    await redis.close()
+    await redis.aclose()
