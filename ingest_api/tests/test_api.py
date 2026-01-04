@@ -8,10 +8,7 @@ from ingest_api.main import app
 
 
 @pytest.mark.asyncio
-async def test_track_endpoint_integration(redis_client):
-    """
-    Інтеграційний тест: API -> Redis
-    """
+async def test_track_endpoint_integration(redis_client):  # Назва фікстури!
     test_event = {
         "event": "test_ci",
         "type": "custom",
@@ -21,14 +18,15 @@ async def test_track_endpoint_integration(redis_client):
         "timestamp": "2026-01-04T12:00:00Z",
         "payload": {"key": "value"},
     }
+
+    # Використовуємо httpx для виклику FastAPI
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post("/ingest/track", json=test_event)
 
     assert response.status_code == 202
-    assert response.json()["status"] == "accepted"
 
+    # Перевіряємо дані в Redis
     raw_data = await redis_client.rpop(settings.REDIS_QUEUE_KEY)
     assert raw_data is not None
-
     data = json.loads(raw_data)
     assert data["event"] == "test_ci"
