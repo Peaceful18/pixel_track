@@ -11,15 +11,17 @@ from ingest_api.main import app
 async def test_track_endpoint_integration(redis_client):
     test_event = {
         "event": "test_ci",
-        "type": "http",
+        "type": "http",  # Тип http вимагає наявності raw_log
         "service": "test_service",
         "source": "pytest",
         "user_id": "user_1",
         "timestamp": "2026-01-04T12:00:00Z",
-        "payload": {"key": "value"},
+        "payload": {
+            "raw_log": "GET /api/v1/resource HTTP/1.1 200 OK",  # Тепер валідатор пропустить!
+            "request_id": "123",
+        },
     }
 
-    # Створюємо транспорт для FastAPI
     transport = ASGITransport(app=app)
 
     # Передаємо transport замість app
