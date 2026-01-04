@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from redis import RedisError
 from redis import asyncio as aioredis
 
-from infra.redis_provider import redis_provider
-
+from .dependencies import get_redis_client
 from .redis_client import check_health, push_event, push_event_batch
 from .schemas import BatchEvent, Event, HealthResponse, TrackResponse
 
@@ -14,7 +13,7 @@ router = APIRouter()
     "/track", response_model=TrackResponse, status_code=status.HTTP_202_ACCEPTED
 )
 async def track_event(
-    event: Event, redis: aioredis.Redis = Depends(redis_provider.get_client)
+    event: Event, redis: aioredis.Redis = Depends(get_redis_client)
 ) -> TrackResponse:
     try:
         event_json = event.model_dump_json()
@@ -28,7 +27,7 @@ async def track_event(
     "/track-batch", response_model=TrackResponse, status_code=status.HTTP_202_ACCEPTED
 )
 async def track_batch_event(
-    batch_event: BatchEvent, redis: aioredis.Redis = Depends(redis_provider.get_client)
+    batch_event: BatchEvent, redis: aioredis.Redis = Depends(get_redis_client)
 ) -> TrackResponse:
     try:
         batch_event_json = [e.model_dump_json() for e in batch_event.events]
@@ -42,7 +41,7 @@ async def track_batch_event(
 
 @router.post("/health", response_model=HealthResponse, status_code=status.HTTP_200_OK)
 async def health_check(
-    redis: aioredis.Redis = Depends(redis_provider.get_client),
+    redis: aioredis.Redis = Depends(get_redis_client),
 ) -> HealthResponse:
     is_healthy = await check_health(redis)
 

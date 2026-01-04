@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
     REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
     REDIS_QUEUE_KEY: str = "events:raw"
+    REDIS_PROCESSING_KEY: str = "events:processing"
 
     @property
     def DATABASE_URL(self) -> str:
