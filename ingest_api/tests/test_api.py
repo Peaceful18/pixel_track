@@ -8,7 +8,7 @@ from ingest_api.main import app
 
 
 @pytest.mark.asyncio
-async def test_track_endpoint_integration(client):
+async def test_track_endpoint_integration(redis_client):
     """
     Інтеграційний тест: API -> Redis
     """
@@ -27,7 +27,7 @@ async def test_track_endpoint_integration(client):
     assert response.status_code == 202
     assert response.json()["status"] == "accepted"
 
-    raw_data = await client.rpop(settings.REDIS_QUEUE_KEY)
+    raw_data = await redis_client.rpop(settings.REDIS_QUEUE_KEY)
     assert raw_data is not None
 
     data = json.loads(raw_data)
