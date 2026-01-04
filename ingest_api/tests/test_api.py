@@ -8,7 +8,7 @@ from ingest_api.main import app
 
 
 @pytest.mark.asyncio
-async def test_track_endpoint_integration(redis_client):
+async def test_track_endpoint_integration(redis_client, async_client):
     test_event = {
         "event": "test_ci",
         "type": "http",  # Тип http вимагає наявності raw_log
@@ -22,11 +22,7 @@ async def test_track_endpoint_integration(redis_client):
         },
     }
 
-    transport = ASGITransport(app=app)
-
-    # Передаємо transport замість app
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        response = await ac.post("/ingest/track", json=test_event)
+    response = await async_client.post("/ingest/track", json=test_event)
 
     assert response.status_code == 202
 

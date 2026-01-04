@@ -1,9 +1,11 @@
 import asyncio
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from redis.asyncio import Redis
 
 from app_config.config import settings
+from ingest_api.main import app
 
 
 @pytest.fixture(scope="session")
@@ -30,3 +32,12 @@ async def redis_client():
     # Очищуємо базу після тесту, щоб наступні тести були в "чистому" середовищі
     await redis.flushdb()
     await redis.aclose()
+
+
+@pytest.fixture
+async def async_client():
+    transport = ASGITransport(app=app)
+
+    # Передаємо transport замість app
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
