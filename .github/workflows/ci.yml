@@ -50,4 +50,4 @@ jobs:
           DB_HOST: localhost
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-        run: pytest tests/
+        run: pytest ingest_api/tests/
