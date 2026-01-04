@@ -11,7 +11,7 @@ from ingest_api.main import app
 async def test_track_endpoint_integration(redis_client):
     test_event = {
         "event": "test_ci",
-        "type": "custom",
+        "type": "http",
         "service": "test_service",
         "source": "pytest",
         "user_id": "user_1",
