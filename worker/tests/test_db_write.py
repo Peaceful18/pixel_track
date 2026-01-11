@@ -1,9 +1,10 @@
-import pytest
 from datetime import datetime, timezone
+
+import pytest
 from sqlalchemy import select
 
-from worker.main import flush_to_db
 from database.models import RawEvent
+from worker.main import flush_to_db
 
 
 @pytest.mark.asyncio

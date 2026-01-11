@@ -3,10 +3,14 @@ line-length = 88
 target-version = ["py312"]
 
 [tool.ruff]
+# Глобальні налаштування
 line-length = 88
+exclude = ["venv", "infra", ".devcontainer"]
+
+[tool.ruff.lint]
+# Налаштування саме перевірок коду (linter)
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
-exclude = ["venv", "infra", ".devcontainer"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -19,4 +23,5 @@ exclude = ["venv", "infra"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-asyncio_default_test_loop_scope = "function"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"

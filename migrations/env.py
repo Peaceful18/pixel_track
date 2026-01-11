@@ -1,9 +1,12 @@
 import asyncio
+import importlib
 import os
+import pkgutil
 import sys
 from logging.config import fileConfig
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.getcwd())
 
 from alembic import context
 from sqlalchemy import pool
@@ -11,13 +14,30 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app_config.config import settings
-from database.models import *
+from database.models import Base
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
+
+def load_all_models():
+    """
+    Автоматично знаходить та імпортує всі модулі з папки database/models.
+    Це змушує SQLAlchemy зареєструвати їх у Base.metadata.
+    """
+    package_name = "database.models"
+
+    package = importlib.import_module(package_name)
+
+    for _, module_name, _ in pkgutil.walk_packages(
+        package.__path__, package_name + "."
+    ):
+        importlib.import_module(module_name)
+
+
+load_all_models()
 
 target_metadata = Base.metadata
 
