@@ -45,10 +45,31 @@ jobs:
       - name: Run Linter
         run: ruff check . --ignore E501
 
-      - name: Run Tests
+      - name: Run Migrations (Check Schema)
         env:
           PYTHONPATH: .
           DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASS: postgres
+          DB_NAME: pixeltrack
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pixeltrack
+        run: alembic upgrade head
+
+      - name: Run All Tests
+        env:
+          PYTHONPATH: .
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-        run: pytest ingest_api/tests/
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASS: postgres
+          DB_NAME: pixeltrack
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/pixeltrack
+        run: |
+          echo "🚀 Running API Tests..."
+          pytest ingest_api/tests/
+
+          echo "🚀 Running Worker Tests (DB Integration)..."
+          pytest worker/tests/

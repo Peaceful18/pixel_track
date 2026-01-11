@@ -3,13 +3,18 @@ import json
 import time
 from datetime import datetime
 
-from parsers import parse_log
-from redis_client import ack_event_processed, get_event_reliable, recover_stack_events
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.database import AsyncSessionLocal
 from database.models import RawEvent
 from infra.redis_provider import redis_provider
+from worker.parsers import parse_log
+from worker.redis_client import (
+    ack_event_processed,
+    get_event_reliable,
+    recover_stack_events,
+)
 
 BATCH_SIZE = 100
 FLUSH_INTERVAL = 5
@@ -59,7 +64,8 @@ async def log_listener():
             is_interval_passed = current_time - last_flush_time >= FLUSH_INTERVAL
             if buffer and (is_batch_full or is_interval_passed):
                 try:
-                    await flush_to_db(buffer)
+                    async with AsyncSessionLocal() as session:
+                        await flush_to_db(buffer, session)
                     await ack_event_processed(redis, raw_payload_to_clean)
                     buffer.clear()
                     raw_payload_to_clean.clear()
@@ -73,18 +79,16 @@ async def log_listener():
                 await asyncio.sleep(0.1)
 
 
-async def flush_to_db(events: list):
+async def flush_to_db(events: list, session: AsyncSession):
     if not events:
         return
-
-    async with AsyncSessionLocal() as session:
-        try:
-            async with session.begin():
-                session.add_all(events)
-            print(f"🚀 Flushed {len(events)} events to DB")
-        except SQLAlchemyError as e:
-            print(f"❌ Помилка вставки в DB: {e}.")
-            raise
+    try:
+        session.add_all(events)
+        await session.commit()
+        print(f"🚀 Flushed {len(events)} events to DB")
+    except SQLAlchemyError as e:
+        print(f"❌ Помилка вставки в DB: {e}.")
+        raise
 
 
 if __name__ == "__main__":
