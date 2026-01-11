@@ -1,5 +1,7 @@
 import asyncio
 import json
+import os
+import signal
 import time
 from datetime import datetime
 
@@ -19,17 +21,32 @@ from worker.redis_client import (
 BATCH_SIZE = 100
 FLUSH_INTERVAL = 5
 KEY_RAW_LOG = "raw_log"
+RUNNING = True
+
+
+def stop_worker():
+    global RUNNING
+    RUNNING = False
 
 
 async def log_listener():
+    loop = asyncio.get_running_loop()
+    try:
+        loop.add_signal_handler(signal.SIGTERM, stop_worker)
+        loop.add_signal_handler(signal.SIGINT, stop_worker)
+    except NotImplementedError:
+        print("⚠️ Signal handlers not supported on Windows loop")
     buffer = []
     raw_payload_to_clean = []
     last_flush_time = time.monotonic()
     redis_provider.init_pool()
     async with redis_provider.get_client() as redis:
         await recover_stack_events(redis)
-        while True:
-            data = await get_event_reliable(redis)
+        while RUNNING:
+            try:
+                data = await asyncio.wait_for(get_event_reliable(redis), timeout=1)
+            except asyncio.TimeoutError:
+                data = None
             if data:
                 payload_json = data
                 try:
@@ -77,6 +94,22 @@ async def log_listener():
                     print(f"❌ Невідома помилка: {e}.")
             if not data:
                 await asyncio.sleep(0.1)
+        print("⚠️ Цикл зупинено. Перевірка залишків у буфері...")
+        if buffer:
+            print(f"💾 Зберігаємо залишок ({len(buffer)} подій)...")
+            try:
+                async with AsyncSessionLocal() as session:
+                    await flush_to_db(buffer, session)
+                if raw_payload_to_clean:
+                    await ack_event_processed(redis, raw_payload_to_clean)
+            except SQLAlchemyError as e:
+                print(f"❌ Помилка вставки в DB: {e}.")
+            except Exception as e:
+                print(f"❌ Невідома помилка: {e}.")
+        else:
+            print("💾 Буфер порожній.")
+
+        print("🚀 Робота завершена.")
 
 
 async def flush_to_db(events: list, session: AsyncSession):
@@ -92,8 +125,8 @@ async def flush_to_db(events: list, session: AsyncSession):
 
 
 if __name__ == "__main__":
-    print("Worker started...")
+    print(f"Worker started (PID: {os.getpid()})...")
     try:
         asyncio.run(log_listener())
     except KeyboardInterrupt:
-        print("Worker stopped manually.")
+        pass
