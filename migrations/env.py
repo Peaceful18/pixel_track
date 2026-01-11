@@ -1,10 +1,9 @@
 import asyncio
-import importlib
 import os
-import pkgutil
 import sys
 from logging.config import fileConfig
 
+# Додаємо корінь проекту в шлях пошуку модулів
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 sys.path.append(os.getcwd())
 
@@ -14,46 +13,25 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app_config.config import settings
+
+# Імпортуємо Base та всі моделі. Оскільки вони в одному файлі,
+# цей імпорт автоматично зареєструє їх у метаданих.
 from database.models import Base
 
+# Налаштування логування
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Встановлюємо URL бази даних з нашого конфігу
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
-
-def load_all_models():
-    """
-    Автоматично знаходить та імпортує всі модулі з папки database/models.
-    Це змушує SQLAlchemy зареєструвати їх у Base.metadata.
-    """
-    package_name = "database.models"
-
-    package = importlib.import_module(package_name)
-
-    for _, module_name, _ in pkgutil.walk_packages(
-        package.__path__, package_name + "."
-    ):
-        importlib.import_module(module_name)
-
-
-load_all_models()
-
+# Метадані моделей для Alembic
 target_metadata = Base.metadata
 
 
 def run_migrations_offline():
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+    """Запуск міграцій в 'offline' режимі."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -67,6 +45,7 @@ def run_migrations_offline():
 
 
 def do_run_migrations(connection: Connection) -> None:
+    """Виконання міграцій всередині синхронного контексту."""
     context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
@@ -74,9 +53,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    """
-    Docstring for run_async_migrations
-    """
+    """Асинхронний запуск міграцій."""
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -90,9 +67,7 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-    """
-    Run migrations in 'online' mode.
-    """
+    """Запуск міграцій в 'online' режимі."""
     asyncio.run(run_async_migrations())
 
 
